@@ -1,4 +1,4 @@
---[[Script Spy v1.0.0]]--
+--[[Script Spy v1.1.0]]--
 --[[Made by topit]]--
 
 --[[variables:]]--
@@ -10,10 +10,11 @@ local ContextActionService = game:GetService("ContextActionService")
 
 local plr = PlayerService.LocalPlayer
 local scanoccur = false
-
+local scanlimit = 300
+local minimized = false
 
 --script icons uploaded by me
-local ScriptIcons = {
+local AltScriptIcons = {
     Unknown = "rbxassetid://6755591268",
     Module  = "rbxassetid://6755590361",
     Script  = "rbxassetid://6755590813",
@@ -21,15 +22,22 @@ local ScriptIcons = {
 }
 
 --alternate uploads incase the first one doesnt work
-local AltScriptIcons1 = {
+local AltScriptIcons2 = {
     Unknown = "rbxassetid://6755763421",
     Module  = "rbxassetid://6755763921",
     Script  = "rbxassetid://6755764311",
     Local   = "rbxassetid://6755764933"
 }
+--another alternate upload version incase the second one doesnt work
+local ScriptIcons = {
+    Unknown = "rbxassetid://6756412207",
+    Module  = "rbxassetid://6756411463",
+    Script  = "rbxassetid://6756412803",
+    Local   = "rbxassetid://6756411015" --6756414631
+}
 
---random ones from other people that work
-local AltScriptIcons2 = {
+--random ones from other people that might work
+local AltScriptIcons3 = {
     Unknown = "rbxassetid://49115947",
     Module  = "rbxassetid://5168594717",
     Script  = "rbxassetid://99340892",
@@ -46,7 +54,7 @@ local ScriptsMenuItems = {}
 local DeleteMenuItems = {}
 local InfoMenuItems = {}
 
-local version = "1.0.0<font size='20'>-REL</font>" -- -REL (release) -BETA (beta preview) -DEV (developer build) -SUB (sub branch)
+local version = "1.1.0<font size='20'>-REL</font>" -- -REL (release) -BETA (beta preview) -DEV (developer build) -SUB (sub branch)
 
 --[[themes:]]--
 
@@ -135,6 +143,7 @@ local Title1         = Instance.new("TextLabel")
 local Title2         = Instance.new("TextLabel")
 local CreditText     = Instance.new("TextLabel")
 
+local MaxScans = Instance.new("TextBox")
 
 local ScriptsMenu = {}
 ScriptsMenu.Title  = Instance.new("TextLabel")
@@ -169,9 +178,10 @@ InfoPopup.Info           = Instance.new("TextLabel")
 InfoPopup.Script         = Instance.new("TextLabel")
 InfoPopup.CloseButton    = Instance.new("TextButton")
 
+local MinimizeButton = Instance.new("TextButton")
 local CloseButton    = Instance.new("TextButton")
 
-ScreenGui.Name = "NaturedGUI"
+ScreenGui.Name = "ScriptSpy"
 ScreenGui.Parent = game.CoreGui
 ScreenGui.Enabled = true
 
@@ -196,7 +206,7 @@ Menu.BorderColor3 = SelectedTheme[3]
 Menu.AnchorPoint = Vector2.new(0,0)
 Menu.Position = UDim2.new(0, 0, 0, 25)
 Menu.Size = UDim2.new(0, 400, 0, 325)
-Menu.CanvasSize = UDim2.new(0, TitleBar.Size.X, 0, 250)
+Menu.CanvasSize = UDim2.new(0, TitleBar.Size.X, 0, 400)
 Menu.ScrollBarImageTransparency = 0.5
 Menu.ZIndex = 200
 
@@ -229,15 +239,27 @@ Title2.TextYAlignment = Enum.TextYAlignment.Center
 Title2.TextXAlignment = Enum.TextXAlignment.Left
 
 CreditText.Parent = Menu
-CreditText.Position = UDim2.new(0, 10, 1, -60)
+CreditText.Position = UDim2.new(0, 10, 0, 260)
 CreditText.Font = font
-CreditText.Text = "<br/>Note: pressing delete <b>deletes</b> that script, <b>permanently.</b><br/>Deleting a server script does nothing.<br/>Sorry if the icons aren't visible.<br/>Made by topit"
+CreditText.Text = "<br/>Note: pressing delete <b>deletes</b> that script, <b>permanently.</b><br/>Currently, using a script scan limit under 160 is broken.<br/>I'm not sure why this is, but I'll fix it eventually.<br/>Made by topit"
 CreditText.TextColor3 = SelectedTheme[7]
 CreditText.TextSize = 20
 CreditText.TextXAlignment = Enum.TextXAlignment.Left
 CreditText.ZIndex = 300
 CreditText.RichText = true
 CreditText.BackgroundTransparency = 1
+
+MaxScans.Parent = Menu
+MaxScans.BackgroundColor3 = SelectedTheme[4]
+MaxScans.BorderColor3 = SelectedTheme[3]
+MaxScans.TextColor3 = SelectedTheme[7]
+MaxScans.Position = UDim2.new(0, 10, 1, -45)
+MaxScans.Size = UDim2.new(0, 365, 0, 35)
+MaxScans.Font = font
+MaxScans.PlaceholderText = "Enter new scan limit"
+MaxScans.Text = "Scan limit: 300"
+MaxScans.TextScaled = true
+MaxScans.ZIndex = 300
 
 Scans.Game.Parent = Menu
 Scans.Game.BackgroundColor3 = SelectedTheme[4]
@@ -296,6 +318,7 @@ Display.Size = UDim2.new(0, 386, 0, 200)
 Display.CanvasSize = UDim2.new(0, 100, 0, 50)
 Display.AutomaticCanvasSize = Enum.AutomaticSize.Y
 Display.ScrollBarImageTransparency = 0.5
+Display.BackgroundTransparency = 0
 Display.ZIndex = 200
 
 IconMenu.Menu.Parent = Display
@@ -454,17 +477,27 @@ InfoPopup.CloseButton.TextSize = 14
 
 
 
-CloseButton.AnchorPoint = Vector2.new(1, 0)
 CloseButton.Parent = TitleBar
 CloseButton.BackgroundColor3 = SelectedTheme[4]
 CloseButton.BorderColor3 = SelectedTheme[3]
 CloseButton.TextColor3 = SelectedTheme[7]
-CloseButton.Position = UDim2.new(1, 0, 0, 0)
+CloseButton.Position = UDim2.new(1, -25, 0, 0)
 CloseButton.Size = UDim2.new(0, 25, 0, 24)
 CloseButton.Font = font
 CloseButton.Text = "X"
 CloseButton.ZIndex = 300
 CloseButton.TextSize = 14
+
+MinimizeButton.Parent = TitleBar
+MinimizeButton.BackgroundColor3 = SelectedTheme[4]
+MinimizeButton.BorderColor3 = SelectedTheme[3]
+MinimizeButton.TextColor3 = SelectedTheme[7]
+MinimizeButton.Position = UDim2.new(1, -50, 0, 0)
+MinimizeButton.Size = UDim2.new(0, 25, 0, 24)
+MinimizeButton.Font = font
+MinimizeButton.Text = "-"
+MinimizeButton.ZIndex = 300
+MinimizeButton.TextSize = 14
 
 --[[Functions]]--
 
@@ -482,6 +515,11 @@ local function TweenPosition(object, dest, timing, dir)
     game.TweenService:Create(object,TweenInfo.new(timing, Enum.EasingStyle.Exponential, dir),{ Position = dest  }):Play()
 end
 
+local function TweenBTransparency(object, dest, timing, dir)
+    timing = timing or 0.25
+    dir = dir or Enum.EasingDirection.Out
+    game.TweenService:Create(object,TweenInfo.new(timing, Enum.EasingStyle.Exponential, dir),{ BackgroundTransparency = dest  }):Play()
+end
 
 local function TweenSize(object, dest, timing, dir)
     timing = timing or 0.25
@@ -597,6 +635,7 @@ local function InformationFromIndex(i)
     InfoPopup.TitleBar.BackgroundTransparency = 0
     InfoPopup.Menu.BackgroundTransparency = 0
     InfoPopup.Menu.ScrollBarThickness = 15
+    InfoPopup.Menu.ScrollBarImageTransparency = 0.5
     InfoPopup.Title1.TextTransparency = 0
     InfoPopup.Title2.TextTransparency = 0
     InfoPopup.Info.TextTransparency = 0
@@ -682,7 +721,14 @@ end
 local function CatchScript(lscript)
     Display.CanvasSize = UDim2.new(0, 100, 1, 0)
     table.insert(CaughtScripts, lscript)
-    
+    local i = table.getn(CaughtScripts)
+    --[[
+    for _ind,v in pairs(CaughtScripts) do
+        if v == lscript then
+            i = _ind
+        end
+    end
+    ]]--
     
     local tx = Instance.new("TextLabel")
     tx.Parent = ScriptsMenu.Menu
@@ -695,7 +741,11 @@ local function CatchScript(lscript)
     end
     tx.RichText = true
     tx.TextColor3 = SelectedTheme[8]
-    tx.BackgroundColor3 = SelectedTheme[2]
+    if i % 2 == 0 then
+        tx.BackgroundColor3 = Color3.new(SelectedTheme[2].R + 0.02, SelectedTheme[2].G + 0.02, SelectedTheme[2].B + 0.02)
+    else
+        tx.BackgroundColor3 = SelectedTheme[2]
+    end
     tx.BorderColor3 = SelectedTheme[3]
     tx.TextSize = 17
     tx.ZIndex = 400
@@ -710,18 +760,18 @@ local function CatchScript(lscript)
     tx2.Text = "🗑 Delete script"
     tx2.TextSize = 15
     tx2.ZIndex = 400
-    tx2.BackgroundColor3 = SelectedTheme[2]
+    if i % 2 == 0 then
+        tx2.BackgroundColor3 = Color3.new(SelectedTheme[2].R + 0.02, SelectedTheme[2].G + 0.02, SelectedTheme[2].B + 0.02)
+    else
+        tx2.BackgroundColor3 = SelectedTheme[2]
+    end
     tx2.BorderColor3 = SelectedTheme[3]
     tx2.TextColor3 = SelectedTheme[7]
     tx2.BackgroundTransparency = 0.5
     table.insert(DeleteMenuItems, tx2)
     
     tx2.MouseButton1Click:Connect(function()
-        for i,v in pairs(CaughtScripts) do
-            if v == lscript then
-                DeleteIndex(i)
-            end
-        end
+        DeleteIndex(i)
     end)
     
     local tx3 = Instance.new("TextButton")
@@ -731,36 +781,44 @@ local function CatchScript(lscript)
     tx3.Text = "📋 Info"
     tx3.TextSize = 15
     tx3.ZIndex = 400
-    tx3.BackgroundColor3 = SelectedTheme[2]
+    if i % 2 == 0 then
+        tx3.BackgroundColor3 = Color3.new(SelectedTheme[2].R + 0.02, SelectedTheme[2].G + 0.02, SelectedTheme[2].B + 0.02)
+    else
+        tx3.BackgroundColor3 = SelectedTheme[2]
+    end
     tx3.BorderColor3 = SelectedTheme[3]
     tx3.TextColor3 = SelectedTheme[7]
     tx3.BackgroundTransparency = 0.5
     table.insert(InfoMenuItems, tx3)
     tx3.MouseButton1Click:Connect(function()
-        for i,v in pairs(CaughtScripts) do
-            if v == lscript then
-                InformationFromIndex(i)
-            end
-        end
+        InformationFromIndex(i)
     end)
     
-    local tx4 = Instance.new("ImageLabel")
+    local tx4 = Instance.new("TextLabel")
     tx4.Parent = IconMenu.Menu
     tx4.Size = UDim2.new(0, 25, 0, 25)
     tx4.ZIndex = 405
-    tx4.ImageTransparency = 0
-    tx4.BackgroundColor3 = SelectedTheme[2]
+    --tx4.ImageTransparency = 0
+    if i % 2 == 0 then
+        tx4.BackgroundColor3 = Color3.new(SelectedTheme[2].R + 0.02, SelectedTheme[2].G + 0.02, SelectedTheme[2].B + 0.02)
+    else
+        tx4.BackgroundColor3 = SelectedTheme[2]
+    end
     tx4.BorderColor3 = SelectedTheme[3]
     tx4.BackgroundTransparency = 0.5
-    if lscript:IsA("LocalScript") then
-        tx4.Image = ScriptIcons.Local
-    elseif lscript:IsA("ModuleScript") then
-        tx4.Image = ScriptIcons.Module
-    elseif lscript:IsA("Script") then
-        tx4.Image = ScriptIcons.Script
-    else
-        tx4.Image = ScriptIcons.Unknown
-    end
+    tx4.Font = Enum.Font.Nunito
+    tx4.TextSize = 12 
+    tx4.Text = tostring(i)..")"
+    tx4.TextColor3 = SelectedTheme[8]
+    --if lscript:IsA("LocalScript") then
+    --    tx4.Image = ScriptIcons.Local
+    --elseif lscript:IsA("ModuleScript") then
+    --    tx4.Image = ScriptIcons.Module
+    --elseif lscript:IsA("Script") then
+    --    tx4.Image = ScriptIcons.Script
+    --else
+    --    tx4.Image = ScriptIcons.Unknown
+    --end
     table.insert(IconMenuItems, tx4)
     Display.CanvasSize = UDim2.new(0, 100, 1, 0)
     Display.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -787,9 +845,29 @@ CloseButton.MouseButton1Click:Connect(function()
 	script:Destroy()
 end)
 
+MinimizeButton.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        TweenSize(TitleBar, UDim2.new(0, 400, 0, 25), 0.5)
+        TweenSize(Shadow, UDim2.new(0, 400, 0, 25), 0.5)
+        TweenSize(Menu, UDim2.new(0, 400, 0, 0), 0.5)
+        TweenBTransparency(Display, 1, 2)
+        Menu.ScrollBarThickness = 0
+    else
+        TweenSize(TitleBar, UDim2.new(0, 400, 0, 350), 0.5)
+        TweenSize(Shadow, UDim2.new(0, 400, 0, 350), 0.5)
+        TweenSize(Menu, UDim2.new(0, 400, 0, 325), 0.5)
+        TweenBTransparency(Display, 0, 2)
+        wait(0.75)
+        Menu.ScrollBarThickness = 15
+    end
+end)
+
 InfoPopup.CloseButton.MouseButton1Click:Connect(function()
     TweenPosition(InfoPopup.TitleBar, UDim2.new(InfoPopup.TitleBar.Position.X.Scale, InfoPopup.TitleBar.Position.X.Offset - 50, InfoPopup.TitleBar.Position.Y.Scale, InfoPopup.TitleBar.Position.Y.Offset), 0.25)
     FadeOut(InfoPopup.TitleBar, 0.25) 
+    wait(0.25)
+    InfoPopup.TitleBar.Position = UDim2.new(1.5, 0, 0.5, -(InfoPopup.TitleBar.Size.Y.Offset / 2))
 end)
 
 Scans.Game.MouseButton1Click:Connect(function()
@@ -800,7 +878,6 @@ Scans.Game.MouseButton1Click:Connect(function()
     end
     
     local err = false
-    local count = 0
     ScriptsMenu.Title.Text = "Scanning..."
     
     local g = table.getn(game:GetDescendants())
@@ -809,29 +886,34 @@ Scans.Game.MouseButton1Click:Connect(function()
     end
     wait()
     scanoccur = true
-    for i,v in pairs(game:GetDescendants()) do
-        ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-        if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < 300 then
-            CatchScript(v)
-            count = count + 1
-            wait()
-        elseif count >= 300 then
-            err = true
-            break
+    local scan = coroutine.wrap(function()
+        local count = 0
+        for i,v in pairs(game:GetDescendants()) do
+            ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
+                CatchScript(v)
+                count = count + 1
+                --wait(0.00001)
+            elseif count >= scanlimit then
+                err = true
+                if v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    count = count + 1
+                end
+            end
         end
-    end
-    scanoccur = false
-    
-    if err then
-        ScriptsMenu.Title.Text = "Limited scan to 300 / "..tostring(table.getn(getscripts())).." scripts - game scan"
-    else
-        if count == 1 then
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - game scan"
+        scanoccur = false
+        if err then
+            ScriptsMenu.Title.Text = "Limited scan to "..tostring(scanlimit).."? / "..tostring(count).." scripts - game scan"
         else
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - game scan"
+            if count == 1 then
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - game scan"
+            else
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - game scan"
+            end
         end
-    end
-    count = nil
+        count = nil
+    end)
+    scan()
 end)
 
 Scans.Workspace.MouseButton1Click:Connect(function()
@@ -842,38 +924,42 @@ Scans.Workspace.MouseButton1Click:Connect(function()
     end
     
     local err = false
-    local count = 0
     ScriptsMenu.Title.Text = "Scanning..."
     
-    local g = table.getn(game:GetDescendants())
+    local g = table.getn(game.Workspace:GetDescendants())
     for i = 1, table.getn(CaughtScripts) do
         ReleaseIndex(1)
     end
     wait()
     scanoccur = true
-    for i,v in pairs(game.Workspace:GetDescendants()) do
-        ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-        if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < 300 then
-            CatchScript(v)
-            count = count + 1
-            wait()
-        elseif count >= 300 then
-            err = true
-            break
+    local scan = coroutine.wrap(function()
+        local count = 0
+        for i,v in pairs(game.Workspace:GetDescendants()) do
+            ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
+                CatchScript(v)
+                count = count + 1
+                --wait(0.00001)
+            elseif count >= scanlimit then
+                err = true
+                if v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    count = count + 1
+                end
+            end
         end
-    end
-    scanoccur = false
-    
-    if err then
-        ScriptsMenu.Title.Text = "Limited scan to 300 / "..tostring(table.getn(getscripts())).." scripts - workspace scan"
-    else
-        if count == 1 then
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - workspace scan"
+        scanoccur = false
+        if err then
+            ScriptsMenu.Title.Text = "Limited scan to "..tostring(scanlimit).."? / "..tostring(count).." scripts - workspace scan"
         else
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - workspace scan"
+            if count == 1 then
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - workspace scan"
+            else
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - workspace scan"
+            end
         end
-    end
-    count = nil
+        count = nil
+    end)
+    scan()
 end)
 
 Scans.Player.MouseButton1Click:Connect(function()
@@ -883,43 +969,42 @@ Scans.Player.MouseButton1Click:Connect(function()
         return
     end
     local err = false
-    local count = 0
     ScriptsMenu.Title.Text = "Scanning..."
     
-    local g = table.getn(game:GetDescendants())
+    local g = table.getn(plr:GetDescendants())
     for i = 1, table.getn(CaughtScripts) do
         ReleaseIndex(1)
     end
     wait()
     scanoccur = true
-    for i,v in pairs(plr:GetDescendants()) do
-        ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-        if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < 300 then
-            CatchScript(v)
-            count = count + 1
-            wait()
-        else
-            if count >= 300 then
+    local scan = coroutine.wrap(function()
+        local count = 0
+        for i,v in pairs(plr:GetDescendants()) do
+            ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
+                CatchScript(v)
+                count = count + 1
+                --wait(0.00001)
+            elseif count >= scanlimit then
                 err = true
-                break
-            elseif stopscan == true then
-                stopscan = false
-                break 
+                if v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    count = count + 1
+                end
             end
         end
-    end
-    scanoccur = false
-    
-    if err then
-        ScriptsMenu.Title.Text = "Limited scan to 300 / "..tostring(table.getn(getscripts())).." scripts - local player scan"
-    else
-        if count == 1 then
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - local player scan"
+        scanoccur = false
+        if err then
+            ScriptsMenu.Title.Text = "Limited scan to "..tostring(scanlimit).."? / "..tostring(count).." scripts - local player scan"
         else
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - local player scan"
+            if count == 1 then
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - local player scan"
+            else
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - local player scan"
+            end
         end
-    end
-    count = nil
+        count = nil
+    end)
+    scan()
 end)
 
 Scans.Character.MouseButton1Click:Connect(function()
@@ -930,40 +1015,61 @@ Scans.Character.MouseButton1Click:Connect(function()
     end
     
     local err = false
-    local count = 0
     ScriptsMenu.Title.Text = "Scanning..."
     
-    local g = table.getn(game:GetDescendants())
+    local g = table.getn(plr.Character:GetDescendants())
     for i = 1, table.getn(CaughtScripts) do
         ReleaseIndex(1)
     end
     wait()
     scanoccur = true
-    for i,v in pairs(plr.Character:GetDescendants()) do
-        ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-        if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < 300 then
-            CatchScript(v)
-            count = count + 1
-            wait()
-        else
-            if count >= 300 then
+    local scan = coroutine.wrap(function()
+        local count = 0
+        for i,v in pairs(plr.Character:GetDescendants()) do
+            ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
+                CatchScript(v)
+                count = count + 1
+                --wait(0.00001)
+            elseif count >= scanlimit then
                 err = true
-                break
+                if v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    count = count + 1
+                end
             end
         end
-    end
-    scanoccur = false
-    
-    if err then
-        ScriptsMenu.Title.Text = "Limited scan to 300 / "..tostring(table.getn(getscripts())).." scripts - local character scan"
-    else
-        if count == 1 then
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - local character scan"
+        scanoccur = false
+        if err then
+            ScriptsMenu.Title.Text = "Limited scan to "..tostring(scanlimit).."? / "..tostring(count).." scripts - local character scan"
         else
-            ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - local character scan"
+            if count == 1 then
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." script - local character scan"
+            else
+                ScriptsMenu.Title.Text = "Caught "..tostring(count).." scripts - local character scan"
+            end
         end
+        count = nil
+    end)
+    scan()
+end)
+
+MaxScans.FocusLost:Connect(function()
+    local txt = MaxScans.Text
+    local ptxt = txt:gsub("%D",""):sub(1,4)
+    local isnum = pcall(function() return tonumber(ptxt) end)
+        
+    if isnum and ptxt ~= "" then
+        scanlimit = tonumber(ptxt)
+        MaxScans.Text = "Successfully saved scan limit"
+        wait(1)
+        MaxScans.Text = "Scan limit: "..ptxt
+    else
+        MaxScans:ReleaseFocus()
+        MaxScans.Text = "That was not a number"
+        wait(1)
+        MaxScans:CaptureFocus()
     end
-    count = nil
+    
 end)
 
 
