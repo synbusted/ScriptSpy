@@ -13,7 +13,7 @@ local scanoccur = false
 
 
 --script icons uploaded by me
-local AltScriptIcons = {
+local ScriptIcons = {
     Unknown = "rbxassetid://6755591268",
     Module  = "rbxassetid://6755590361",
     Script  = "rbxassetid://6755590813",
@@ -21,7 +21,7 @@ local AltScriptIcons = {
 }
 
 --alternate uploads incase the first one doesnt work
-local AltScriptIcons2 = {
+local AltScriptIcons1 = {
     Unknown = "rbxassetid://6755763421",
     Module  = "rbxassetid://6755763921",
     Script  = "rbxassetid://6755764311",
@@ -29,7 +29,7 @@ local AltScriptIcons2 = {
 }
 
 --random ones from other people that work
-local ScriptIcons = {
+local AltScriptIcons2 = {
     Unknown = "rbxassetid://49115947",
     Module  = "rbxassetid://5168594717",
     Script  = "rbxassetid://99340892",
