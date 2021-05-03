@@ -1,4 +1,4 @@
---[[Script Spy v1.1.0]]--
+--[[Script Spy v1.2.0]]--
 --[[Made by topit]]--
 
 --[[variables:]]--
@@ -11,17 +11,28 @@ local ContextActionService = game:GetService("ContextActionService")
 local plr = PlayerService.LocalPlayer
 local scanoccur = false
 local scanlimit = 300
+local showserverscripts = true
 local minimized = false
 
---script icons uploaded by me
-local AltScriptIcons = {
+--fml
+
+--probably working icons uploaded through the studio
+local ScriptIcons = {
+    Unknown = "rbxassetid://6760148959",
+    Module  = "rbxassetid://6760144975",
+    Script  = "rbxassetid://6760149681",
+    Local   = "rbxassetid://6760147700"
+}
+
+--alternate uploads through website incase studio doesnt work
+local AltScriptIcons1 = {
     Unknown = "rbxassetid://6755591268",
     Module  = "rbxassetid://6755590361",
     Script  = "rbxassetid://6755590813",
     Local   = "rbxassetid://6755603069"
 }
 
---alternate uploads incase the first one doesnt work
+--another thing of alternate uploads through website
 local AltScriptIcons2 = {
     Unknown = "rbxassetid://6755763421",
     Module  = "rbxassetid://6755763921",
@@ -29,7 +40,7 @@ local AltScriptIcons2 = {
     Local   = "rbxassetid://6755764933"
 }
 --another alternate upload version incase the second one doesnt work
-local ScriptIcons = {
+local AltScriptIcons3 = {
     Unknown = "rbxassetid://6756412207",
     Module  = "rbxassetid://6756411463",
     Script  = "rbxassetid://6756412803",
@@ -37,7 +48,7 @@ local ScriptIcons = {
 }
 
 --random ones from other people that might work
-local AltScriptIcons3 = {
+local AltScriptIcons4 = {
     Unknown = "rbxassetid://49115947",
     Module  = "rbxassetid://5168594717",
     Script  = "rbxassetid://99340892",
@@ -54,7 +65,7 @@ local ScriptsMenuItems = {}
 local DeleteMenuItems = {}
 local InfoMenuItems = {}
 
-local version = "1.1.0<font size='20'>-REL</font>" -- -REL (release) -BETA (beta preview) -DEV (developer build) -SUB (sub branch)
+local version = "1.2.0<font size='20'>-REL</font>" -- -REL (release) -BETA (beta preview) -DEV (developer build) -SUB (sub branch)
 
 --[[themes:]]--
 
@@ -143,7 +154,8 @@ local Title1         = Instance.new("TextLabel")
 local Title2         = Instance.new("TextLabel")
 local CreditText     = Instance.new("TextLabel")
 
-local MaxScans = Instance.new("TextBox")
+local MaxScans    = Instance.new("TextBox")
+local ShowServers = Instance.new("TextButton")
 
 local ScriptsMenu = {}
 ScriptsMenu.Title  = Instance.new("TextLabel")
@@ -206,7 +218,7 @@ Menu.BorderColor3 = SelectedTheme[3]
 Menu.AnchorPoint = Vector2.new(0,0)
 Menu.Position = UDim2.new(0, 0, 0, 25)
 Menu.Size = UDim2.new(0, 400, 0, 325)
-Menu.CanvasSize = UDim2.new(0, TitleBar.Size.X, 0, 400)
+Menu.CanvasSize = UDim2.new(0, TitleBar.Size.X, 0, 435)
 Menu.ScrollBarImageTransparency = 0.5
 Menu.ZIndex = 200
 
@@ -241,7 +253,7 @@ Title2.TextXAlignment = Enum.TextXAlignment.Left
 CreditText.Parent = Menu
 CreditText.Position = UDim2.new(0, 10, 0, 260)
 CreditText.Font = font
-CreditText.Text = "<br/>Note: pressing delete <b>deletes</b> that script, <b>permanently.</b><br/>Currently, using a script scan limit under 160 is broken.<br/>I'm not sure why this is, but I'll fix it eventually.<br/>Made by topit"
+CreditText.Text = "<br/>Note: pressing delete <b>deletes</b> that script, <b>permanently.</b><br/>Deleting a server script has no change.<br/>Icons should be working now.<br/>Made by topit"
 CreditText.TextColor3 = SelectedTheme[7]
 CreditText.TextSize = 20
 CreditText.TextXAlignment = Enum.TextXAlignment.Left
@@ -260,6 +272,17 @@ MaxScans.PlaceholderText = "Enter new scan limit"
 MaxScans.Text = "Scan limit: 300"
 MaxScans.TextScaled = true
 MaxScans.ZIndex = 300
+
+ShowServers.Parent = Menu
+ShowServers.BackgroundColor3 = SelectedTheme[4]
+ShowServers.BorderColor3 = SelectedTheme[3]
+ShowServers.TextColor3 = SelectedTheme[7]
+ShowServers.Position = UDim2.new(0, 10, 1, -95)
+ShowServers.Size = UDim2.new(0, 365, 0, 35)
+ShowServers.Font = font
+ShowServers.Text = "Show server scripts"
+ShowServers.TextScaled = true
+ShowServers.ZIndex = 300
 
 Scans.Game.Parent = Menu
 Scans.Game.BackgroundColor3 = SelectedTheme[4]
@@ -627,8 +650,10 @@ end
 
 local function InformationFromIndex(i)
     InfoPopup.Info.Text = "<br/>Loading info..."
-    if syn then
+    if syn and CaughtScripts[i].ClassName ~= "Script" then
         InfoPopup.Script.Text = "Loading script..."
+    elseif syn and CaughtScripts[i].ClassName == "Script" then
+        InfoPopup.Script.Text = "Can't decompile server scripts."
     else
         InfoPopup.Script.Text = "Can't load script; exploit not compatible."
     end
@@ -657,7 +682,7 @@ local function InformationFromIndex(i)
     
     
     local arg1 = tostring(CaughtScripts[i].Name)
-    local arg3 = type(CaughtScripts[i])
+    local arg3 = CaughtScripts[i].ClassName
     
     local tree1, tree2, tree3, tree4, tree5 = nil
     
@@ -692,7 +717,7 @@ local function InformationFromIndex(i)
     
     InfoPopup.Info.Text = finaltext
     
-    if syn then
+    if syn and CaughtScripts[i].ClassName ~= "Script" then
         local arg2 = decompile(CaughtScripts[i])
         
         finaltext = finaltext.."<br/>script (you should probably use dex): "
@@ -794,11 +819,10 @@ local function CatchScript(lscript)
         InformationFromIndex(i)
     end)
     
-    local tx4 = Instance.new("TextLabel")
+    local tx4 = Instance.new("Frame")
     tx4.Parent = IconMenu.Menu
     tx4.Size = UDim2.new(0, 25, 0, 25)
     tx4.ZIndex = 405
-    --tx4.ImageTransparency = 0
     if i % 2 == 0 then
         tx4.BackgroundColor3 = Color3.new(SelectedTheme[2].R + 0.02, SelectedTheme[2].G + 0.02, SelectedTheme[2].B + 0.02)
     else
@@ -806,19 +830,24 @@ local function CatchScript(lscript)
     end
     tx4.BorderColor3 = SelectedTheme[3]
     tx4.BackgroundTransparency = 0.5
-    tx4.Font = Enum.Font.Nunito
-    tx4.TextSize = 12 
-    tx4.Text = tostring(i)..")"
-    tx4.TextColor3 = SelectedTheme[8]
-    --if lscript:IsA("LocalScript") then
-    --    tx4.Image = ScriptIcons.Local
-    --elseif lscript:IsA("ModuleScript") then
-    --    tx4.Image = ScriptIcons.Module
-    --elseif lscript:IsA("Script") then
-    --    tx4.Image = ScriptIcons.Script
-    --else
-    --    tx4.Image = ScriptIcons.Unknown
-    --end
+    tx4.ClipsDescendants = true
+    
+    local tx5 = Instance.new("ImageLabel")
+    tx5.Position = UDim2.new(0, 0, 0, 0)
+    tx5.Size = UDim2.new(0, 325, 0, 325)
+    tx5.Parent = tx4
+    tx5.ZIndex = 406
+    tx5.Image = "rbxassetid://483448923"
+    tx5.BackgroundTransparency = 1
+    
+    
+    if lscript.ClassName == "LocalScript" then
+        tx5.Position = UDim2.new(0, -93, 0, -25)
+    elseif lscript.ClassName == "ModuleScript" then
+        tx5.Position = UDim2.new(0, -24, 0, -115)
+    elseif lscript.ClassName == "Script" then
+        tx5.Position = UDim2.new(0, -138, 0, -1)
+    end
     table.insert(IconMenuItems, tx4)
     Display.CanvasSize = UDim2.new(0, 100, 1, 0)
     Display.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -890,9 +919,14 @@ Scans.Game.MouseButton1Click:Connect(function()
         local count = 0
         for i,v in pairs(game:GetDescendants()) do
             ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
-                CatchScript(v)
-                count = count + 1
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") or v:IsA("Script") and count < scanlimit then 
+                if v:IsA("Script") and showserverscripts then
+                    CatchScript(v)
+                    count = count + 1
+                elseif v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    CatchScript(v)
+                    count = count + 1
+                end
                 --wait(0.00001)
             elseif count >= scanlimit then
                 err = true
@@ -936,10 +970,14 @@ Scans.Workspace.MouseButton1Click:Connect(function()
         local count = 0
         for i,v in pairs(game.Workspace:GetDescendants()) do
             ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
-                CatchScript(v)
-                count = count + 1
-                --wait(0.00001)
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") or v:IsA("Script") and count < scanlimit then
+                if v:IsA("Script") and showserverscripts then
+                    CatchScript(v)
+                    count = count + 1
+                elseif v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    CatchScript(v)
+                    count = count + 1
+                end
             elseif count >= scanlimit then
                 err = true
                 if v:IsA("LocalScript") or v:IsA("ModuleScript") then
@@ -981,10 +1019,14 @@ Scans.Player.MouseButton1Click:Connect(function()
         local count = 0
         for i,v in pairs(plr:GetDescendants()) do
             ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
-                CatchScript(v)
-                count = count + 1
-                --wait(0.00001)
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") or v:IsA("Script") and count < scanlimit then
+                if v:IsA("Script") and showserverscripts then
+                    CatchScript(v)
+                    count = count + 1
+                elseif v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    CatchScript(v)
+                    count = count + 1
+                end
             elseif count >= scanlimit then
                 err = true
                 if v:IsA("LocalScript") or v:IsA("ModuleScript") then
@@ -1027,10 +1069,14 @@ Scans.Character.MouseButton1Click:Connect(function()
         local count = 0
         for i,v in pairs(plr.Character:GetDescendants()) do
             ScriptsMenu.Title.Text = "Scanning... ("..tostring(i).."/"..tostring(g)..")"
-            if v:IsA("LocalScript") or v:IsA("ModuleScript") and count < scanlimit then
-                CatchScript(v)
-                count = count + 1
-                --wait(0.00001)
+            if v:IsA("LocalScript") or v:IsA("ModuleScript") or v:IsA("Script") and count < scanlimit then
+                if v:IsA("Script") and showserverscripts then
+                    CatchScript(v)
+                    count = count + 1
+                elseif v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                    CatchScript(v)
+                    count = count + 1
+                end
             elseif count >= scanlimit then
                 err = true
                 if v:IsA("LocalScript") or v:IsA("ModuleScript") then
@@ -1069,7 +1115,15 @@ MaxScans.FocusLost:Connect(function()
         wait(1)
         MaxScans:CaptureFocus()
     end
-    
+end)
+
+ShowServers.MouseButton1Click:Connect(function()
+    showserverscripts = not showserverscripts
+    if showserverscripts then
+        OpenObject(ShowServers)
+    else
+        CloseObject(ShowServers)
+    end
 end)
 
 
@@ -1118,6 +1172,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 TweenPosition(TitleBar, UDim2.new(0.75, 0, 0.5, -(TitleBar.Size.Y.Offset / 2)), 1)
+OpenObject(ShowServers)
 local cofunc = coroutine.wrap(function() Message("<font size='25'>ScriptSpy v"..version.."</font><br/><font size='25'>Made by topit</font>", UDim2.new(0, 230, 0, 100)) end)
 cofunc()
 
